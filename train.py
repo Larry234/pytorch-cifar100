@@ -26,15 +26,14 @@ from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader, WarmUpLR, \
     most_recent_folder, most_recent_weights, last_epoch, best_acc_weights
 
-def train(epoch):
+def train(device, epoch):
 
     start = time.time()
     net.train()
     for batch_index, (images, labels) in enumerate(cifar100_training_loader):
 
-        if args.gpu:
-            labels = labels.cuda()
-            images = images.cuda()
+        labels = labels.to(device)
+        images = images.to(device)
 
         optimizer.zero_grad()
         outputs = net(images)
@@ -75,7 +74,7 @@ def train(epoch):
     print('epoch {} training time consumed: {:.2f}s'.format(epoch, finish - start))
 
 @torch.no_grad()
-def eval_training(epoch=0, tb=True):
+def eval_training(device, epoch=0, tb=True):
 
     start = time.time()
     net.eval()
@@ -85,9 +84,8 @@ def eval_training(epoch=0, tb=True):
 
     for (images, labels) in cifar100_test_loader:
 
-        if args.gpu:
-            images = images.cuda()
-            labels = labels.cuda()
+        images = images.to(device)
+        labels = labels.to(device)
 
         outputs = net(images)
         loss = loss_function(outputs, labels)
@@ -97,13 +95,12 @@ def eval_training(epoch=0, tb=True):
         correct += preds.eq(labels).sum()
 
     finish = time.time()
-    if args.gpu:
-        print('GPU INFO.....')
-        print(torch.cuda.memory_summary(), end='')
-    print('Evaluating Network.....')
+#     print('GPU INFO.....')
+#     print(torch.cuda.memory_summary(), end='')
+#     print('Evaluating Network.....')
     print('Test set: Epoch: {}, Average loss: {:.4f}, Accuracy: {:.4f}, Time consumed:{:.2f}s'.format(
         epoch,
-        test_loss / len(cifar100_test_loader.dataset),
+        test_loss / len(cifar100_test_loader),
         correct.float() / len(cifar100_test_loader.dataset),
         finish - start
     ))
@@ -117,18 +114,21 @@ def eval_training(epoch=0, tb=True):
     return correct.float() / len(cifar100_test_loader.dataset)
 
 if __name__ == '__main__':
-
+    
     parser = argparse.ArgumentParser()
-    parser.add_argument('-net', type=str, required=True, help='net type')
-    parser.add_argument('-gpu', action='store_true', default=False, help='use gpu or not')
-    parser.add_argument('-b', type=int, default=128, help='batch size for dataloader')
-    parser.add_argument('-warm', type=int, default=1, help='warm up training phase')
-    parser.add_argument('-lr', type=float, default=0.1, help='initial learning rate')
-    parser.add_argument('-resume', action='store_true', default=False, help='resume training')
+    parser.add_argument('--net', type=str, required=True, help='net type')
+    parser.add_argument('--b', type=int, default=128, help='batch size for dataloader')
+    parser.add_argument('--warm', type=int, default=1, help='warm up training phase')
+    parser.add_argument('--lr', type=float, default=0.1, help='initial learning rate')
+    parser.add_argument('--resume', action='store_true', default=False, help='resume training')
+    parser.add_argument('--device', type=int, help='gpu device id')
     args = parser.parse_args()
-
-    net = get_network(args)
-
+    
+    torch.manual_seed(777)
+    torch.cuda.manual_seed_all(777)
+    device = torch.device(f'cuda:{args.device}' if torch.cuda.is_available() else "cpu")
+    net = get_network(args, device)
+    
     #data preprocessing:
     cifar100_training_loader = get_training_dataloader(
         settings.CIFAR100_TRAIN_MEAN,
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.net, recent_folder)
 
     else:
-        checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.net, settings.TIME_NOW)
+        checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.net)
 
     #use tensorboard
     if not os.path.exists(settings.LOG_DIR):
@@ -171,14 +171,13 @@ if __name__ == '__main__':
     writer = SummaryWriter(log_dir=os.path.join(
             settings.LOG_DIR, args.net, settings.TIME_NOW))
     input_tensor = torch.Tensor(1, 3, 32, 32)
-    if args.gpu:
-        input_tensor = input_tensor.cuda()
+    input_tensor = input_tensor.to(device)
     writer.add_graph(net, input_tensor)
 
     #create checkpoint folder to save model
     if not os.path.exists(checkpoint_path):
         os.makedirs(checkpoint_path)
-    checkpoint_path = os.path.join(checkpoint_path, '{net}-{epoch}-{type}.pth')
+#     checkpoint_path = os.path.join(checkpoint_path, '{net}-{epoch}-{type}.pt')
 
     best_acc = 0.0
     if args.resume:
@@ -209,20 +208,20 @@ if __name__ == '__main__':
             if epoch <= resume_epoch:
                 continue
 
-        train(epoch)
-        acc = eval_training(epoch)
+        train(device, epoch)
+        acc = eval_training(device, epoch)
 
         #start to save best performance model after learning rate decay to 0.01
         if epoch > settings.MILESTONES[1] and best_acc < acc:
-            weights_path = checkpoint_path.format(net=args.net, epoch=epoch, type='best')
+            weights_path = os.path.join(checkpoint_path, 'init_best.pt')
             print('saving weights file to {}'.format(weights_path))
             torch.save(net.state_dict(), weights_path)
             best_acc = acc
             continue
 
-        if not epoch % settings.SAVE_EPOCH:
-            weights_path = checkpoint_path.format(net=args.net, epoch=epoch, type='regular')
-            print('saving weights file to {}'.format(weights_path))
-            torch.save(net.state_dict(), weights_path)
-
+#         if not epoch % settings.SAVE_EPOCH:
+#             weights_path = checkpoint_path.format(net=args.net, epoch=epoch, type='regular')
+#             print('saving weights file to {}'.format(weights_path))
+#             torch.save(net.state_dict(), weights_path)
+    print(f"The best val acc is: {best_acc:.4f}")
     writer.close()

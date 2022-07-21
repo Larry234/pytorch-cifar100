@@ -16,7 +16,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
 
-def get_network(args):
+def get_network(args, device=None):
     """ return given network
     """
 
@@ -29,6 +29,15 @@ def get_network(args):
     elif args.net == 'vgg11':
         from models.vgg import vgg11_bn
         net = vgg11_bn()
+    elif args.net == 'vgg11cp':
+        from models.vgg import vgg11_CP
+        net = vgg11_CP()
+    elif args.net == 'vgg11cpb':
+        from models.vgg import vgg11_CPB
+        net = vgg11_CPB()
+    elif args.net == 'vgg11fcp':
+        from models.vgg import vgg11_FCP
+        net = vgg11_FCP()
     elif args.net == 'vgg19':
         from models.vgg import vgg19_bn
         net = vgg19_bn()
@@ -156,10 +165,8 @@ def get_network(args):
     else:
         print('the network name you have entered is not supported yet')
         sys.exit()
-
-    if args.gpu: #use_gpu
-        net = net.cuda()
-
+    
+    net.to(device)
     return net
 
 
