@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 
 from .ConcatPool import *
+from .EMPool import EMPool2d_
 
 
 cfg = {
@@ -19,11 +20,25 @@ cfg = {
     'A1': [64,     'M', 128,      'M', 256, 256,           'M', 512, 512,           'M', 512, 512,           'C'], # 0.6770
     'A2': [64,     'M', 128,      'M', 256, 256,           'M', 512, 512,           'M', 512, 512,          'CB'], # 0.6762
     'A3': [64,    'KM', 128,     'KM', 256, 256,          'KM', 512, 512,          'KM', 1024, 1024,        'KM'],
+    'AE': [64,     'M', 128,      'M', 256, 256,           'M', 512, 512,           'M', 512, 512,           'E'], # 0.6775
     'B' : [64, 64, 'M', 128, 128, 'M', 256, 256,           'M', 512, 512,           'M', 512, 512,           'M'],
     'B1': [64, 64, 'M', 128, 128, 'M', 256, 256,           'M', 512, 512,           'M', 512, 512,           'C'],
     'B2': [64, 64, 'M', 128, 128, 'M', 256, 256,           'M', 512, 512,           'M', 512, 512,          'CB'],
     'D' : [64, 64, 'M', 128, 128, 'M', 256, 256, 256,      'M', 512, 512, 512,      'M', 512, 512, 512,      'M'],
-    'E' : [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M']
+    'D1': [64, 64, 'M', 128, 128, 'M', 256, 256, 256,      'M', 512, 512, 512,      'M', 512, 512, 512,      'C'],
+    'D2': [64, 64, 'M', 128, 128, 'M', 256, 256, 256,      'M', 512, 512, 512,      'M', 512, 512, 512,     'CB'],
+    'E' : [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
+}
+
+model_urls = {
+    'vgg11': 'https://download.pytorch.org/models/vgg11-8a719046.pth',
+    'vgg13': 'https://download.pytorch.org/models/vgg13-19584684.pth',
+    'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
+    'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth',
+    'vgg11_bn': 'https://download.pytorch.org/models/vgg11_bn-6002323d.pth',
+    'vgg13_bn': 'https://download.pytorch.org/models/vgg13_bn-abd245e5.pth',
+    'vgg16_bn': 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth',
+    'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
 }
 
 class VGG(nn.Module):
@@ -31,10 +46,10 @@ class VGG(nn.Module):
     def __init__(self, features, num_class=100, init_weights=True, CP=False):
         super().__init__()
         self.features = features
-        
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         if CP:
             self.classifier = nn.Sequential(
-                nn.Linear(2048, 4096),
+                nn.Linear(2048 * 7 * 7, 4096),
                 nn.ReLU(inplace=True),
                 nn.Dropout(),
                 nn.Linear(4096, 4096),
@@ -44,7 +59,7 @@ class VGG(nn.Module):
             )
         else:
             self.classifier = nn.Sequential(
-                nn.Linear(512, 4096),
+                nn.Linear(512 * 7 * 7, 4096),
                 nn.ReLU(inplace=True),
                 nn.Dropout(),
                 nn.Linear(4096, 4096),
@@ -57,7 +72,8 @@ class VGG(nn.Module):
 
     def forward(self, x):
         output = self.features(x)
-        output = output.view(output.size()[0], -1)
+        output = self.avgpool(output)
+        output = torch.flatten(output, 1)
         output = self.classifier(output)
 
         return output
@@ -88,6 +104,9 @@ def make_layers(cfg, batch_norm=False):
             continue
         elif l == 'CB':
             layers += [ConcatPooling2d(kernel_size=2, stride=2), nn.Conv2d(2048, 512, kernel_size=1, stride=1)]
+            continue
+        elif l == 'E':
+            layers += [EMPool2d_(kernel_size=2, stride=2)]
             continue
 
         layers += [nn.Conv2d(input_channel, l, kernel_size=3, padding=1)]
@@ -138,13 +157,22 @@ def vgg11_CPB():
     return VGG(make_layers(cfg['A2'], batch_norm=True))
 
 def vgg11_FCP():
-    return VGG(make_layersFCP(cfgp['A3'], batch_norm=True), CP=True)
+    return VGG(make_layersFCP(cfg['A3'], batch_norm=True), CP=True)
+
+def vgg11_EM():
+    return VGG(make_layers(cfg['AE'], batch_norm=True))
 
 def vgg13_bn():
     return VGG(make_layers(cfg['B'], batch_norm=True))
 
 def vgg16_bn():
     return VGG(make_layers(cfg['D'], batch_norm=True))
+
+def vgg16_bn_CP(num_class=100):
+    return VGG(make_layers(cfg['D1'], batch_norm=True), num_class=num_class, CP=True)
+
+def vgg16_bn_CPB(num_class=100):
+    return VGG(make_layers(cfg['D2'], batch_norm=True), num_class=num_class)
 
 def vgg19_bn():
     return VGG(make_layers(cfg['E'], batch_norm=True))
