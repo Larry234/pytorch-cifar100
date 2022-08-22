@@ -22,25 +22,25 @@ def get_network(net, num_class=100, device=None):
 
     if net == 'vgg16':
         from models.vgg import vgg16_bn
-        model = vgg16_bn()
+        model = vgg16_bn(num_class=num_class)
     elif net == 'vgg13':
         from models.vgg import vgg13_bn
-        model = vgg13_bn()
+        model = vgg13_bn(num_class=num_class)
     elif net == 'vgg11':
         from models.vgg import vgg11_bn
-        model = vgg11_bn(num_class)
+        model = vgg11_bn(num_class=num_class)
     elif net == 'vgg11cp':
         from models.vgg import vgg11_CP
-        model = vgg11_CP()
+        model = vgg11_CP(num_class=num_class)
     elif net == 'vgg11cpb':
         from models.vgg import vgg11_CPB
-        model = vgg11_CPB()
+        model = vgg11_CPB(num_class=num_class)
     elif net == 'vgg11em':
         from models.vgg import vgg11_EM
-        model = vgg11_EM()
+        model = vgg11_EM(num_class=num_class)
     elif net == 'vgg11fcp':
         from models.vgg import vgg11_FCP
-        model = vgg11_FCP()
+        model = vgg11_FCP(num_class=num_class)
     elif net == 'vgg16cp':
         from models.vgg import vgg16_bn_CP
         model = vgg16_bn_CP(num_class=num_class)

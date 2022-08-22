@@ -111,6 +111,7 @@ def main_worker(gpu, ngpus_per_node, args):
         writer = SummaryWriter(log_dir=os.path.join(settings.LOG_DIR, args.arch, settings.TIME_NOW))
     
     args.gpu = gpu
+    print(args.url)
 
     if args.gpu is not None:
         print("Use GPU: {} for training".format(args.gpu))
@@ -130,10 +131,11 @@ def main_worker(gpu, ngpus_per_node, args):
         model = models.__dict__[args.arch](pretrained=True)
     else:
         print("=> creating model '{}'".format(args.arch))
-        model = get_network(args.arch, num_class=1000)
-
+        model = get_network(args.arch, num_class=200)
+    model = model.cuda()
+    # print(model)
         
-    if args.url != '':
+    if args.url != None:
         print(f"loading pretrained weight form {args.url}")
         state_dict = load_state_dict_from_url(args.url, progress=True)
         model_dict = model.state_dict()
@@ -146,7 +148,7 @@ def main_worker(gpu, ngpus_per_node, args):
             if "features" in l:
                 p.required_grad = False
     
-    model = torch.nn.DataParallel(model).cuda()
+    # model = torch.nn.DataParallel(model).cuda()
 #     if not torch.cuda.is_available():
 #         print('using CPU, this will be slow')
 # #     elif args.distributed:
@@ -228,8 +230,6 @@ def main_worker(gpu, ngpus_per_node, args):
         train_dataset = datasets.ImageFolder(
             traindir,
             transforms.Compose([
-                transforms.RandomResizedCrop(224),
-                transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 normalize,
             ]))
@@ -237,8 +237,6 @@ def main_worker(gpu, ngpus_per_node, args):
         val_dataset = datasets.ImageFolder(
             valdir,
             transforms.Compose([
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 normalize,
             ]))
@@ -313,10 +311,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
-
-        if args.gpu is not None:
-            images = images.cuda(args.gpu, non_blocking=True)
+            
         if torch.cuda.is_available():
+            images = images.cuda(args.gpu, non_blocking=True)
             target = target.cuda(args.gpu, non_blocking=True)
 
         # compute output
@@ -350,9 +347,9 @@ def validate(val_loader, model, criterion, args):
             end = time.time()
             for i, (images, target) in enumerate(loader):
                 i = base_progress + i
-                if args.gpu is not None:
-                    images = images.cuda(args.gpu, non_blocking=True)
+
                 if torch.cuda.is_available():
+                    images = images.cuda(args.gpu, non_blocking=True)
                     target = target.cuda(args.gpu, non_blocking=True)
 
                 # compute output
