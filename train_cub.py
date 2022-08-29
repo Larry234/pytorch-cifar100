@@ -190,6 +190,7 @@ def main_worker(gpu, ngpus_per_node, args):
     train_dataset = Cub2011(
         root=args.data, 
         train=True,
+        download=False,
         transform=transforms.Compose([
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
@@ -200,6 +201,7 @@ def main_worker(gpu, ngpus_per_node, args):
     val_dataset = Cub2011(
         root=args.data, 
         train=False,
+        download=False,
         transform=transforms.Compose([
             transforms.Resize(256),
             transforms.CenterCrop(224),

@@ -50,7 +50,7 @@ class Cub2011(Dataset):
             return False
         print("checking filepath")
         for index, row in self.data.iterrows():
-            filepath = os.path.join(self.root, row.filepath)
+            filepath = os.path.join(self.root, 'images', row.filepath)
             if not os.path.isfile(filepath):
                 print("file not found:", filepath)
                 return False
@@ -73,7 +73,7 @@ class Cub2011(Dataset):
 
     def __getitem__(self, idx):
         sample = self.data.iloc[idx]
-        path = os.path.join(self.root, self.base_folder, sample.filepath)
+        path = os.path.join(self.root, 'images', sample.filepath)
         target = sample.target - 1  # Targets start at 1 by default, so shift to 0
         img = self.loader(path)
 
