@@ -16,7 +16,7 @@ CIFAR100_TRAIN_STD = (0.2673342858792401, 0.2564384629170883, 0.2761504713256840
 #CIFAR100_TEST_STD = (0.2682515741720801, 0.2573637364478126, 0.2770957707973042)
 
 #directory to save weights file
-CHECKPOINT_PATH = 'checkpoint'
+CHECKPOINT_PATH = 'checkpoints/tiny_imagenet'
 
 #total training epoches
 EPOCH = 200
@@ -30,7 +30,7 @@ DATE_FORMAT = '%A_%d_%B_%Y_%Hh_%Mm'
 TIME_NOW = datetime.now().strftime(DATE_FORMAT)
 
 #tensorboard log dir
-LOG_DIR = '/runs'
+LOG_DIR = './runs'
 
 #save weights file per SAVE_EPOCH epoch
 SAVE_EPOCH = 10
