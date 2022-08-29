@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 
 
 class Cub2011(Dataset):
-    base_folder = '/root/notebooks/nfs/datataset/CUB_200_2011/images'
+    base_folder = '/root/notebooks/nfs/work/dataset/CUB_200_2011/images'
     url = 'http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz'
     filename = 'CUB_200_2011.tgz'
     tgz_md5 = '97eceeb196236b17998738112f37df78'
@@ -44,12 +44,13 @@ class Cub2011(Dataset):
         try:
             self._load_metadata()
         except Exception:
+            print("Error occured when loading meta data")
             return False
 
         for index, row in self.data.iterrows():
             filepath = os.path.join(self.root, self.base_folder, row.filepath)
             if not os.path.isfile(filepath):
-                print(filepath)
+                print("file not found:", filepath)
                 return False
         return True
 
@@ -77,4 +78,4 @@ class Cub2011(Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        return img, 
+        return img, target

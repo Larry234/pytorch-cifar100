@@ -16,11 +16,11 @@ CIFAR100_TRAIN_STD = (0.2673342858792401, 0.2564384629170883, 0.2761504713256840
 #CIFAR100_TEST_STD = (0.2682515741720801, 0.2573637364478126, 0.2770957707973042)
 
 #directory to save weights file
-CHECKPOINT_PATH = 'checkpoint'
+CHECKPOINT_PATH = 'checkpoint/Cub2011'
 
 #total training epoches
-EPOCH = 200
-MILESTONES = [60, 120, 160]
+EPOCH = 90
+MILESTONES = [30, 60]
 
 #initial learning rate
 #INIT_LR = 0.1
@@ -30,7 +30,7 @@ DATE_FORMAT = '%A_%d_%B_%Y_%Hh_%Mm'
 TIME_NOW = datetime.now().strftime(DATE_FORMAT)
 
 #tensorboard log dir
-LOG_DIR = '/runs'
+LOG_DIR = '/root/notebooks/nfs/work/larry.lai/pytorch-cifar100/runs/cub2011'
 
 #save weights file per SAVE_EPOCH epoch
 SAVE_EPOCH = 10

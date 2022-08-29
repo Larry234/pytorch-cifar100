@@ -112,20 +112,10 @@ def main_worker(gpu, ngpus_per_node, args):
         writer = SummaryWriter(log_dir=os.path.join(settings.LOG_DIR, args.arch, settings.TIME_NOW))
     
     args.gpu = gpu
-    print(args.url)
 
     if args.gpu is not None:
         print("Use GPU: {} for training".format(args.gpu))
 
-#     if args.distributed:
-#         if args.dist_url == "env://" and args.rank == -1:
-#             args.rank = int(os.environ["RANK"])
-#         if args.multiprocessing_distributed:
-#             # For multiprocessing distributed training, rank needs to be the
-#             # global rank among all the processes
-#             args.rank = args.rank * ngpus_per_node + gpu
-#         dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
-#                                 world_size=args.world_size, rank=args.rank)
     # create model
     if args.pretrained:
         print("=> using pre-trained model '{}'".format(args.arch))
@@ -134,7 +124,6 @@ def main_worker(gpu, ngpus_per_node, args):
         print("=> creating model '{}'".format(args.arch))
         model = get_network(args.arch, num_class=200)
     model = model.cuda()
-    # print(model)
         
     if args.url != None:
         print(f"loading pretrained weight form {args.url}")
@@ -150,36 +139,6 @@ def main_worker(gpu, ngpus_per_node, args):
                 p.required_grad = False
     
     # model = torch.nn.DataParallel(model).cuda()
-#     if not torch.cuda.is_available():
-#         print('using CPU, this will be slow')
-# #     elif args.distributed:
-# #         # For multiprocessing distributed, DistributedDataParallel constructor
-# #         # should always set the single device scope, otherwise,
-# #         # DistributedDataParallel will use all available devices.
-# #         if args.gpu is not None:
-# #             torch.cuda.set_device(args.gpu)
-# #             model.cuda(args.gpu)
-# #             # When using a single GPU per process and per
-# #             # DistributedDataParallel, we need to divide the batch size
-# #             # ourselves based on the total number of GPUs of the current node.
-# #             args.batch_size = int(args.batch_size / ngpus_per_node)
-# #             args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
-# #             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
-# #         else:
-# #             model.cuda()
-# #             # DistributedDataParallel will divide and allocate batch_size to all
-# #             # available GPUs if device_ids are not set
-# #             model = torch.nn.parallel.DistributedDataParallel(model)
-# #     elif args.gpu is not None:
-# #         torch.cuda.set_device(args.gpu)
-# #         model = model.cuda(args.gpu)
-#     else:
-#         # DataParallel will divide and allocate batch_size to all available GPUs
-#         if args.arch.startswith('alexnet') or args.arch.startswith('vgg'):
-#             model.features = torch.nn.DataParallel(model.features)
-#             model.cuda()
-#         else:
-#             model = torch.nn.DataParallel(model).cuda()
 
     # define loss function (criterion), optimizer, and learning rate scheduler
     criterion = nn.CrossEntropyLoss().cuda(args.gpu)
@@ -229,17 +188,21 @@ def main_worker(gpu, ngpus_per_node, args):
                                      std=[0.229, 0.224, 0.225])
 
     train_dataset = Cub2011(
-        root='/root/notebooks/nfs/dataset', 
+        root='/root/notebooks/nfs/work/dataset', 
         train=True,
         transform=transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
             transforms.ToTensor(),
             normalize,
         ]))
 
     val_dataset = Cub2011(
-        root='/root/notebooks/nfs/dataset', 
+        root='/root/notebooks/nfs/work/dataset', 
         train=False,
         transform=transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
             transforms.ToTensor(),
             normalize,
         ]))
@@ -295,7 +258,7 @@ def main_worker(gpu, ngpus_per_node, args):
             'best_acc1': best_acc1,
             'optimizer' : optimizer.state_dict(),
             'scheduler' : scheduler.state_dict()
-        }, is_best, root=settings.CHECKPOINT_PATH)
+        }, is_best, filename=f'{args.arch}_best.pth.tar', root=settings.CHECKPOINT_PATH)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
@@ -407,7 +370,7 @@ def validate(val_loader, model, criterion, args):
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar', root=None):
     torch.save(state, filename)
     if is_best:
-        shutil.copyfile(filename, os.path.join(root, 'model_best.pth.tar'))
+        shutil.copyfile(filename, os.path.join(root, filename))
 
 class Summary(Enum):
     NONE = 0
