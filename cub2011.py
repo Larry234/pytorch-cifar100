@@ -6,7 +6,9 @@ from torch.utils.data import Dataset
 
 
 class Cub2011(Dataset):
+<<<<<<< HEAD
     base_folder = '/root/notebooks/nfs/work/dataset/CUB_200_2011/images'
+=======
     url = 'http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz'
     filename = 'CUB_200_2011.tgz'
     tgz_md5 = '97eceeb196236b17998738112f37df78'
@@ -25,11 +27,12 @@ class Cub2011(Dataset):
                                ' You can use download=True to download it')
 
     def _load_metadata(self):
-        images = pd.read_csv(os.path.join(self.root, 'CUB_200_2011', 'images.txt'), sep=' ',
+        print("loading data")
+        images = pd.read_csv(os.path.join(self.root, 'images.txt'), sep=' ',
                              names=['img_id', 'filepath'])
-        image_class_labels = pd.read_csv(os.path.join(self.root, 'CUB_200_2011', 'image_class_labels.txt'),
+        image_class_labels = pd.read_csv(os.path.join(self.root, 'image_class_labels.txt'),
                                          sep=' ', names=['img_id', 'target'])
-        train_test_split = pd.read_csv(os.path.join(self.root, 'CUB_200_2011', 'train_test_split.txt'),
+        train_test_split = pd.read_csv(os.path.join(self.root, 'train_test_split.txt'),
                                        sep=' ', names=['img_id', 'is_training_img'])
 
         data = images.merge(image_class_labels, on='img_id')
@@ -41,14 +44,15 @@ class Cub2011(Dataset):
             self.data = self.data[self.data.is_training_img == 0]
 
     def _check_integrity(self):
+        print("checking")
         try:
             self._load_metadata()
         except Exception:
             print("Error occured when loading meta data")
             return False
-
+        print("checking filepath")
         for index, row in self.data.iterrows():
-            filepath = os.path.join(self.root, self.base_folder, row.filepath)
+            filepath = os.path.join(self.root, row.filepath)
             if not os.path.isfile(filepath):
                 print("file not found:", filepath)
                 return False

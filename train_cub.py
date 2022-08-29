@@ -188,17 +188,19 @@ def main_worker(gpu, ngpus_per_node, args):
                                      std=[0.229, 0.224, 0.225])
 
     train_dataset = Cub2011(
-        root='/root/notebooks/nfs/work/dataset', 
+        root=args.data, 
         train=True,
         transform=transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+>>>>>>> 342cd465df7189065fb4265bef9760517af5ce61
             transforms.ToTensor(),
             normalize,
         ]))
 
     val_dataset = Cub2011(
-        root='/root/notebooks/nfs/work/dataset', 
+        root=args.data, 
+>>>>>>> 342cd465df7189065fb4265bef9760517af5ce61
         train=False,
         transform=transforms.Compose([
             transforms.Resize(256),
