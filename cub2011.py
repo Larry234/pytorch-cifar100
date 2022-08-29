@@ -6,9 +6,7 @@ from torch.utils.data import Dataset
 
 
 class Cub2011(Dataset):
-<<<<<<< HEAD
     base_folder = '/root/notebooks/nfs/work/dataset/CUB_200_2011/images'
-=======
     url = 'http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz'
     filename = 'CUB_200_2011.tgz'
     tgz_md5 = '97eceeb196236b17998738112f37df78'

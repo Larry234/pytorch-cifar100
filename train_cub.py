@@ -193,14 +193,12 @@ def main_worker(gpu, ngpus_per_node, args):
         transform=transforms.Compose([
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
->>>>>>> 342cd465df7189065fb4265bef9760517af5ce61
             transforms.ToTensor(),
             normalize,
         ]))
 
     val_dataset = Cub2011(
         root=args.data, 
->>>>>>> 342cd465df7189065fb4265bef9760517af5ce61
         train=False,
         transform=transforms.Compose([
             transforms.Resize(256),

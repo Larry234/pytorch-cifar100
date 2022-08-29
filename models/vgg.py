@@ -74,7 +74,6 @@ class VGG(nn.Module):
         output = self.avgpool(output)
         output = torch.flatten(output, start_dim=1)
         # output = output.view(x.size(0), -1)
->>>>>>> 342cd465df7189065fb4265bef9760517af5ce61
         output = self.classifier(output)
 
         return output
